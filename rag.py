@@ -19,7 +19,7 @@ from PIL import Image
 import shutil
 #!pip install pypdf, langchain, chromadb, sentence-transformers
 #!pip install --upgrade --quiet  langchain-google-genai pillow
-GOOGLE_API_KEY = "AIzaSyBc3QhhSZbhfaqOAponIDb3SVF91h7eubE"
+GOOGLE_API_KEY = "<Gemini API Key>"
 ## LLM model
 llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=GOOGLE_API_KEY)
 
