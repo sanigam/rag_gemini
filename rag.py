@@ -19,13 +19,24 @@ from PIL import Image
 import shutil
 #!pip install pypdf, langchain, chromadb, sentence-transformers
 #!pip install --upgrade --quiet  langchain-google-genai pillow
-GOOGLE_API_KEY = "<Gemini API Key>"
+from google.cloud import storage
+GOOGLE_API_KEY = "AIzaSyBc3QhhSZbhfaqOAponIDb3SVF91h7eubE"
 ## LLM model
 llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=GOOGLE_API_KEY)
 
 st.set_page_config(page_title="WHO Communicator", page_icon="rag.png")
 
+CLOUD_STORAGE_BUCKET = 'rag_app_embedded_docs'
 
+
+def download_blob(file_name):
+    gcs = storage.Client()
+    bucket = gcs.get_bucket(CLOUD_STORAGE_BUCKET)
+    blob = bucket.blob(file_name)
+    os.remove(file_name )
+    blob.download_to_filename(file_name)
+    shutil.rmtree(chroma_dir, ignore_errors=True)
+    shutil.unpack_archive("chroma_db.zip", chroma_dir)
 
 chroma_dir = './chroma_db'
 if os.path.exists(chroma_dir):
@@ -36,7 +47,8 @@ filter_list = []
 lang_list = ['English', 'Japanese', 'Korean', 'Arabic', 'Bahasa Indonesia', 'Bengali', 'Bulgarian', 'Chinese', 'Croatian', 'Czech', \
 'Danish', 'Dutch', 'Estonian',  'Finnish', 'French', 'German', 'Gujarati', 'Greek', 'Hebrew', 'Hindi', 'Hungarian', 'Italian', \
 'Kannada', 'Latvian', 'Lithuanian', 'Malayalam', 'Marathi', 'Norwegian', 'Polish', 'Portuguese', 'Romanian', 'Russian', 'Serbian', 'Slovak', \
-'Slovenian', 'Spanish', 'Swahili', 'Swedish', 'Tamil', 'Telugu', 'Thai', 'Turkish', 'Ukrainian',  'Vietnamese']
+'Slovenian', 'Spanish', 'Swahili', 'Swedish'
+, 'Tamil', 'Telugu', 'Thai', 'Turkish', 'Ukrainian',  'Vietnamese']
 
 #Make a retrieval object
 client = chromadb.PersistentClient(path=chroma_dir)
@@ -115,15 +127,24 @@ prompt = PromptTemplate.from_template(template)
 combine_docs_chain = create_stuff_documents_chain(llm, prompt)
 retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
 
-
 question = st.text_input("**Type your question below.**",  value="", help="Type your question here. Example: How to prevent childhood obesity?" )
-col1, col2, col3 = st.columns([.40,.40,.20])
+col1, col2, col3, col4 = st.columns([.25,.30, .30, .15])
 with col1:
     show_sources = st.checkbox("Show Sources", value=True, help="Show source document and page numbers used to generate the answer.")
 with col2:
     print_text= st.checkbox("Show Text Chunks ", value=False, help="Print text chunks, used to answer the question.") 
 with col3:
+    refresh_rep = st.button("Refresh Repository", help="Click only if new reposotory is available.")
+with col4:
     submit_button = st.button(label='SUBMIT', help='Click to submit question and get answer.')
+
+if refresh_rep:
+        try:
+            download_blob("chroma_db.zip")
+            st.write("Chroma DB Repository downloaded successfully.")
+        except Exception as e:
+            st.write(f"Error in downloading Chroma DB Repository: {e}")
+
 
 if submit_button:
     try:
